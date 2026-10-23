@@ -10,13 +10,15 @@
     "mcp",
     "model-context-protocol"
   ],
-  "homepage": "https://github.com/Pal-AI-Lab/Coopanion/tree/main/packages/cortico-world-mcp",
+  "homepage": "https://github.com/UnusWhite/cortico-world-mcp#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Pal-AI-Lab/Coopanion.git",
-    "directory": "packages/cortico-world-mcp"
+    "url": "git+https://github.com/UnusWhite/cortico-world-mcp.git"
   },
-  "bugs": "https://github.com/Pal-AI-Lab/Coopanion/issues",
+  "bugs": {
+    "url": "https://github.com/UnusWhite/cortico-world-mcp/issues"
+  },
+  "author": "UnusWhite",
   "engines": {
     "node": ">=22"
   },
