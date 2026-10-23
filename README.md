@@ -71,6 +71,17 @@ two call-time keys are read per call.
 - The World is disabled by default. Enabling it without a server leaves an empty prompt section and
   the three tools explain what is missing.
 
+## What the model can reach
+
+The model reaches exactly the tools of the configured servers. It cannot add a server, change a
+command or read the configuration, and nothing is discovered on its own; reach follows the
+configuration. A filesystem server pointed at a drive gives read and write access to that drive, an
+HTTP server gives whatever its endpoint offers, a terminal server gives commands. Judge each server
+by what its tools can do before adding it.
+
+The package declares the `unsafe` and `internet` market tags for that reason: the reach is the
+configuration's, and typical configurations put file access or a web endpoint behind these tools.
+
 ## Files
 
 | File | Content |

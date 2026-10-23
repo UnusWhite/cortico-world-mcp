@@ -10,6 +10,13 @@
     "mcp",
     "model-context-protocol"
   ],
+  "homepage": "https://github.com/Pal-AI-Lab/Coopanion/tree/main/packages/cortico-world-mcp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pal-AI-Lab/Coopanion.git",
+    "directory": "packages/cortico-world-mcp"
+  },
+  "bugs": "https://github.com/Pal-AI-Lab/Coopanion/issues",
   "engines": {
     "node": ">=22"
   },
@@ -22,13 +29,24 @@
     "kind": "world",
     "api": 6,
     "displayName": "MCP",
+    "tags": [
+      "unsafe",
+      "internet"
+    ],
+    "locales": {
+      "zh": {
+        "displayName": "MCP",
+        "description": "把 Model Context Protocol 服务器接进来，交给 bot 一组固定的工具：列服务器、列工具、调工具。能做什么取决于配置了哪些服务器。"
+      }
+    },
     "describe": "describe.json"
   },
   "files": [
     "src",
     "README.md",
     "CHANGELOG.md",
-    "describe.json"
+    "describe.json",
+    "LICENSE"
   ],
   "scripts": {
     "test": "vitest run",
@@ -40,7 +58,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
-    "cortico": "^0.2.4",
+    "cortico": "^0.2.5",
     "typescript": "^5.9.3",
     "vitest": "^2.1.9"
   }

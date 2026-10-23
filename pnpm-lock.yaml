@@ -19,7 +19,7 @@ importers:
         specifier: ^22.10.0
         version: 22.20.5
       cortico:
-        specifier: ^0.2.4
+        specifier: ^0.2.5
         version: 0.2.5
       typescript:
         specifier: ^5.9.3
