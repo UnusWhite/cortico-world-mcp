@@ -1,0 +1,47 @@
+{
+  "name": "cortico-world-mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Cortico World: connects Model Context Protocol servers and lets the bot use their tools through one stable gateway",
+  "license": "AGPL-3.0-or-later",
+  "keywords": [
+    "cortico-world",
+    "cortico",
+    "mcp",
+    "model-context-protocol"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.28.6",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "cortico": {
+    "kind": "world",
+    "api": 6,
+    "displayName": "MCP",
+    "describe": "describe.json"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "describe.json"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "cortico": "^0.2.4",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  }
+}

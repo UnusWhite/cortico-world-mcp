@@ -1,0 +1,108 @@
+{
+  "tools": [
+    {
+      "name": "mcp_list_servers",
+      "description": "List the MCP servers configured for this bot: name, transport, connection state and tool count. Use it when a task may need an external service.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "tags": [
+        "read",
+        "snapshot"
+      ],
+      "summary": {
+        "zh": "列出配置的 MCP 服务器、连接状态与工具数量。",
+        "en": "Lists the configured MCP servers with their connection state and tool counts."
+      }
+    },
+    {
+      "name": "mcp_list_tools",
+      "description": "List the tools an MCP server exposes, with each input schema. Call it before mcp_call_tool; pass refresh when the server may have changed. Omit server to see every connected server.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "server": {
+            "type": "string",
+            "description": "Server name from mcp_list_servers."
+          },
+          "query": {
+            "type": "string",
+            "description": "Keep tools whose name or description contains this text."
+          },
+          "detail": {
+            "type": "boolean",
+            "default": true,
+            "description": "Include each input schema; false lists names and descriptions only."
+          },
+          "refresh": {
+            "type": "boolean",
+            "default": false,
+            "description": "Ask the server for its tool list again before answering."
+          }
+        }
+      },
+      "tags": [
+        "read"
+      ],
+      "summary": {
+        "zh": "列出一个 MCP 服务器的工具及每个工具的输入 schema。",
+        "en": "Lists an MCP server's tools with each input schema."
+      }
+    },
+    {
+      "name": "mcp_call_tool",
+      "description": "Call one tool on an MCP server. arguments must match the input schema mcp_list_tools reports; a failure receipt carries the server's reason.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "server": {
+            "type": "string",
+            "description": "Server name from mcp_list_servers."
+          },
+          "tool": {
+            "type": "string",
+            "description": "Tool name from mcp_list_tools."
+          },
+          "arguments": {
+            "type": "object",
+            "description": "Arguments object for the tool; omit when it takes none.",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "server",
+          "tool"
+        ]
+      },
+      "tags": [
+        "act"
+      ],
+      "summary": {
+        "zh": "调用 MCP 服务器上的一个工具，回执是该服务器的输出或失败原因。",
+        "en": "Calls one tool on an MCP server; the receipt is its output or its failure reason."
+      }
+    }
+  ],
+  "events": [
+    {
+      "type": "mcp.server",
+      "description": {
+        "zh": "已连接的 MCP 服务器断开，正文带断开原因。",
+        "en": "A connected MCP server went away; the text carries the reason."
+      },
+      "trigger": "debounce"
+    }
+  ],
+  "prompts": [
+    {
+      "key": "worlds.mcp.envPrompt",
+      "title": "MCP · 环境提示词",
+      "role": "envPrompt",
+      "content": "## MCP\n\nSome capabilities on this machine come from Model Context Protocol (MCP) servers. Their tools are not in your tool list; three tools reach them:\n\n- `mcp_list_servers` — which servers are configured, whether they are connected, and how many tools each has.\n- `mcp_list_tools` — one server's tools and their input schemas.\n- `mcp_call_tool` — run one tool with `server`, `tool` and `arguments`.\n\nConnected now:\n\n{{mcp.catalog}}\n\nCall `mcp_list_tools` before the first `mcp_call_tool` to a server, and again with `refresh` when a tool it reported is missing or changed. Pass arguments exactly as the schema names them; omit `arguments` for a tool that takes none. A receipt that starts with `[tool failed]` carries the server's own reason: report that instead of retrying blindly.\n\nThese calls act outside the app. Do what the person asked for, and say what changed.\n"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+# This directory is its own pnpm workspace root, so `pnpm install` here installs this package's
+# dependencies instead of walking up to a parent checkout.
+# esbuild ships a prebuilt binary per platform; its postinstall only verifies it, and skipping the
+# script keeps the install clean where lifecycle scripts cannot run.
+allowBuilds:
+  esbuild: false
