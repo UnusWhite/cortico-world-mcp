@@ -1,5 +1,7 @@
 # cortico-world-mcp
 
+[English](README.md) ｜ [简体中文](README_zh.md)
+
 Owner: `src/world.ts`
 
 A Cortico World that connects Model Context Protocol servers and gives the bot one stable way to use
@@ -114,3 +116,7 @@ repository loses them when that repository is reinstalled or moved, and the Worl
 
 `pnpm-workspace.yaml` makes this directory its own pnpm workspace root, so the command installs here
 instead of walking up to a parent checkout.
+
+## License
+
+AGPL-3.0-or-later; the text is in [LICENSE](LICENSE).
