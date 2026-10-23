@@ -23,12 +23,13 @@ const config = (servers: string, patch: Partial<McpConfigSection> = {}): McpConf
 
 const text = (receipt: string | ToolOutcome): string => (typeof receipt === 'string' ? receipt : receipt.text);
 
-const fixtureServers = JSON.stringify([{
-  name: 'fixture',
-  transport: 'stdio',
-  command: process.execPath,
-  args: [FIXTURE],
-}]);
+const fixtureServers = JSON.stringify({
+  fixture: {
+    transport: 'stdio',
+    command: process.execPath,
+    args: [FIXTURE],
+  },
+});
 
 let scratchDir: string;
 let world: McpWorld | null = null;
@@ -106,12 +107,13 @@ describe('MCP World', () => {
   });
 
   it('keeps a failed server as a lamp and a failed receipt', async () => {
-    const broken = JSON.stringify([{
-      name: 'broken',
-      transport: 'stdio',
-      command: process.execPath,
-      args: ['-e', 'process.exit(1)'],
-    }]);
+    const broken = JSON.stringify({
+      broken: {
+        transport: 'stdio',
+        command: process.execPath,
+        args: ['-e', 'process.exit(1)'],
+      },
+    });
     world = new McpWorld({ cfg: config(broken, { connectTimeoutMs: 5000 }), timezone: 'Asia/Shanghai', secret: () => '' });
     const host = new FakeHost();
     await world.start(host);
@@ -125,13 +127,14 @@ describe('MCP World', () => {
   });
 
   it('reports a connect timeout as the timeout, not as a closed connection', async () => {
-    const slow = JSON.stringify([{
-      name: 'slow',
-      transport: 'stdio',
-      command: process.execPath,
-      args: [FIXTURE],
-      env: { FIXTURE_START_DELAY_MS: '1500' },
-    }]);
+    const slow = JSON.stringify({
+      slow: {
+        transport: 'stdio',
+        command: process.execPath,
+        args: [FIXTURE],
+        env: { FIXTURE_START_DELAY_MS: '1500' },
+      },
+    });
     world = new McpWorld({ cfg: config(slow, { connectTimeoutMs: 500 }), timezone: 'Asia/Shanghai', secret: () => '' });
     await world.start(new FakeHost());
 
@@ -142,7 +145,7 @@ describe('MCP World', () => {
   });
 
   it('turns invalid config into a failed receipt instead of throwing from create()', async () => {
-    world = new McpWorld({ cfg: config('[{"name":"x"}]'), timezone: 'Asia/Shanghai', secret: () => '' });
+    world = new McpWorld({ cfg: config('{"x":{}}'), timezone: 'Asia/Shanghai', secret: () => '' });
     await world.start(new FakeHost());
     const receipt = text(await world.tools().find((tool) => tool.name === 'mcp_list_servers')!.handler({}, CTX) as string);
     expect(receipt).toContain('[tool failed] MCP is not available');

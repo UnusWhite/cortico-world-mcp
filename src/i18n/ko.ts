@@ -8,7 +8,7 @@ const ko: McpText = {
     description: 'Model Context Protocol 서버입니다. 사용하면 해당 도구를 mcp_list_servers, mcp_list_tools, mcp_call_tool로 사용합니다.',
     serversTitle: '서버',
     serversDescription:
-      '서버의 JSON 배열입니다. 각 항목에는 name과 transport(stdio 또는 http)가 있고, stdio는 command, args, cwd, env를, http는 url, headers를 씁니다. 값에 ${NAME}을 쓰면 배포 보안 비밀 NAME을 읽습니다. 예:[{"name":"files","transport":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}]. 변경은 World를 다시 시작한 뒤 적용됩니다.',
+      '서버는 서버 이름을 키로 하는 객체입니다. 값에 그 서버의 설정을 씁니다. command가 있으면 stdio(args, cwd, env는 선택), url이 있으면 http(headers는 선택)가 되며 transport를 직접 써도 됩니다. 값에 ${NAME}을 쓰면 배포 보안 비밀 NAME을 읽습니다. 예:{"files":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}}. 변경은 World를 다시 시작한 뒤 적용됩니다.',
     connectTimeoutTitle: '연결 시간 초과',
     connectTimeoutDescription: '서버가 시작해 도구를 나열할 때까지 기다리는 시간입니다. 넘기면 연결 실패로 기록합니다.',
     callTimeoutTitle: '호출 시간 초과',

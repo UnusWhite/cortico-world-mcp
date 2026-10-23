@@ -8,7 +8,7 @@ const ja: McpText = {
     description: 'Model Context Protocol のサーバー。有効にすると、そのツールを mcp_list_servers、mcp_list_tools、mcp_call_tool から使えます。',
     serversTitle: 'サーバー',
     serversDescription:
-      'サーバーの JSON 配列。各項目は name と transport(stdio または http)を持ち、stdio では command、args、cwd、env、http では url、headers を書きます。値に ${NAME} を書くとデプロイのシークレット NAME を読みます。例:[{"name":"files","transport":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}]。変更は World の再起動後に反映されます。',
+      'サーバーはサーバー名をキーにしたオブジェクトです。値にそのサーバーの設定を書きます。command があれば stdio(args、cwd、env は任意)、url があれば http(headers は任意)になり、transport を明示してもかまいません。値に ${NAME} を書くとデプロイのシークレット NAME を読みます。例:{"files":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}}。変更は World の再起動後に反映されます。',
     connectTimeoutTitle: '接続タイムアウト',
     connectTimeoutDescription: 'サーバーが起動してツールを列挙するまでの待ち時間。超えると接続失敗として扱います。',
     callTimeoutTitle: '呼び出しタイムアウト',

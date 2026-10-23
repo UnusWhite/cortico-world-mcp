@@ -1,9 +1,9 @@
-/** The `worlds.mcp.servers` JSON array: validation, defaults, and `${SECRET}` expansion. */
+/** The `worlds.mcp.servers` object: validation, defaults, and `${SECRET}` expansion. */
 
 export type McpTransport = 'stdio' | 'http';
 
 export interface McpServerEntry {
-  /** Routing name in `mcp_call_tool` and receipts. */
+  /** Routing name in `mcp_call_tool` and receipts; the key in `worlds.mcp.servers`. */
   name: string;
   transport: McpTransport;
   /** stdio */
@@ -36,8 +36,9 @@ const stringMap = (value: unknown): Record<string, string> | null => {
 };
 
 /**
- * Parse the JSON array. An empty string is no server. Every entry is validated; all problems are
- * reported together so one save fixes the whole section.
+ * Parse the object: the key is the server name, the value its settings. An empty string is no
+ * server. Every entry is validated; all problems are reported together so one save fixes the whole
+ * section.
  */
 export function parseServers(raw: string): McpServerEntry[] {
   const source = (raw ?? '').trim();
@@ -49,83 +50,89 @@ export function parseServers(raw: string): McpServerEntry[] {
   } catch (error) {
     throw new McpConfigError(`worlds.mcp.servers is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
   }
-  if (!Array.isArray(parsed)) throw new McpConfigError('worlds.mcp.servers must be a JSON array of servers.');
+  if (!isObject(parsed)) {
+    throw new McpConfigError('worlds.mcp.servers must be a JSON object keyed by server name, such as {"files":{"command":"npx","args":["-y","server"]}}.');
+  }
 
   const entries: McpServerEntry[] = [];
   const problems: string[] = [];
   const seen = new Set<string>();
 
-  parsed.forEach((item, index) => {
-    const where = `Entry ${index + 1}`;
-    if (!isObject(item)) {
-      problems.push(`${where} is not an object.`);
-      return;
-    }
-    const name = typeof item.name === 'string' ? item.name.trim() : '';
+  for (const [key, item] of Object.entries(parsed)) {
+    const name = key.trim();
     if (!NAME.test(name)) {
       const shown = name ? ` ${JSON.stringify(name.length > 60 ? `${name.slice(0, 60)}…` : name)}` : '';
-      problems.push(`${where} has no valid name${shown} (1–40 letters, digits, "_" or "-").`);
-      return;
+      problems.push(`Server key${shown} is not a valid name (1–40 letters, digits, "_" or "-").`);
+      continue;
     }
     if (seen.has(name)) {
       problems.push(`Duplicate server name "${name}".`);
-      return;
+      continue;
     }
     seen.add(name);
+    if (!isObject(item)) {
+      problems.push(`Server "${name}" is not an object.`);
+      continue;
+    }
+    // The name is the key; an entry copied from the array shape would lose it silently.
+    if ('name' in item) {
+      problems.push(`Server "${name}" has a name field; the key is the name.`);
+      continue;
+    }
 
     // These are section settings. Accepting them here would silently keep the default timeout.
-    for (const key of ['connectTimeoutMs', 'callTimeoutMs', 'maxResultChars'] as const) {
-      if (key in item) {
-        problems.push(`${where} ("${name}") has ${key} inside the server entry; it belongs in worlds.mcp.${key}, beside servers.`);
+    for (const setting of ['connectTimeoutMs', 'callTimeoutMs', 'maxResultChars'] as const) {
+      if (setting in item) {
+        problems.push(`Server "${name}" has ${setting} inside the entry; it belongs in worlds.mcp.${setting}, beside servers.`);
       }
     }
 
     const kind = item.transport ?? (typeof item.command === 'string' ? 'stdio' : typeof item.url === 'string' ? 'http' : undefined);
     if (kind !== 'stdio' && kind !== 'http') {
-      problems.push(`${where} ("${name}") needs transport "stdio" with a command, or "http" with a url.`);
-      return;
+      problems.push(`Server "${name}" needs transport "stdio" with a command, or "http" with a url.`);
+      continue;
     }
 
     const args = item.args ?? [];
     if (!Array.isArray(args) || args.some((arg) => typeof arg !== 'string')) {
-      problems.push(`${where} ("${name}") args must be an array of strings.`);
-      return;
+      problems.push(`Server "${name}" args must be an array of strings.`);
+      continue;
     }
     const env = stringMap(item.env);
     if (env === null) {
-      problems.push(`${where} ("${name}") env must be an object of strings.`);
-      return;
+      problems.push(`Server "${name}" env must be an object of strings.`);
+      continue;
     }
     const headers = stringMap(item.headers);
     if (headers === null) {
-      problems.push(`${where} ("${name}") headers must be an object of strings.`);
-      return;
+      problems.push(`Server "${name}" headers must be an object of strings.`);
+      continue;
     }
 
     if (kind === 'stdio') {
       const command = typeof item.command === 'string' ? item.command.trim() : '';
       if (!command) {
-        problems.push(`${where} ("${name}") is stdio but has no command.`);
-        return;
+        problems.push(`Server "${name}" is stdio but has no command.`);
+        continue;
       }
       const cwd = item.cwd;
       if (cwd !== undefined && typeof cwd !== 'string') {
-        problems.push(`${where} ("${name}") cwd must be a string.`);
-        return;
+        problems.push(`Server "${name}" cwd must be a string.`);
+        continue;
       }
       entries.push({ name, transport: 'stdio', command, args, ...(typeof cwd === 'string' ? { cwd } : {}), env, headers: {} });
-      return;
+      continue;
     }
 
     const url = typeof item.url === 'string' ? item.url.trim() : '';
     let parsedUrl: URL | null = null;
     try { parsedUrl = url ? new URL(url) : null; } catch { parsedUrl = null; }
     if (!parsedUrl || (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:')) {
-      problems.push(`${where} ("${name}") is http but ${url ? `url ${JSON.stringify(url)}` : 'has no url'} is not an http(s) URL.`);
-      return;
+      problems.push(`Server "${name}" is http but ${url ? `url ${JSON.stringify(url)}` : 'has no url'} is not an http(s) URL.`);
+      continue;
     }
     entries.push({ name, transport: 'http', args: [], env: {}, url, headers });
-  });
+  }
 
   if (problems.length) throw new McpConfigError(problems.join(' '));
   return entries;

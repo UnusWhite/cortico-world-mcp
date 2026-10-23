@@ -24,28 +24,25 @@ knows what is available without calling `mcp_list_servers` first.
 
 ## Configuration
 
-`worlds.mcp.servers` is a JSON array. An empty string means no server.
+`worlds.mcp.servers` is a JSON object keyed by server name; each value holds that server's
+settings. An empty string means no server.
 
 ```json
-[
-  {
-    "name": "files",
-    "transport": "stdio",
+{
+  "files": {
     "command": "npx",
     "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/docs"]
   },
-  {
-    "name": "issues",
-    "transport": "http",
+  "issues": {
     "url": "https://mcp.example.com/mcp",
     "headers": { "Authorization": "Bearer ${ISSUES_TOKEN}" }
   }
-]
+}
 ```
 
 | Field | Meaning |
 |---|---|
-| `name` | Routing name in `mcp_call_tool`; 1–40 letters, digits, `_` or `-`, unique. |
+| *(key)* | The routing name in `mcp_call_tool`; 1–40 letters, digits, `_` or `-`. |
 | `transport` | `stdio` or `http`; inferred from `command` or `url` when omitted. |
 | `command`, `args`, `cwd`, `env` | stdio only. The child inherits the SDK's default environment plus `env`. |
 | `url`, `headers` | http only; Streamable HTTP. |

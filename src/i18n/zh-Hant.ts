@@ -8,7 +8,7 @@ const zhHant: McpText = {
     description: '模型上下文協定伺服器。啟用後，它提供的工具經 mcp_list_servers、mcp_list_tools 與 mcp_call_tool 使用。',
     serversTitle: '伺服器',
     serversDescription:
-      '伺服器的 JSON 陣列。每項有 name、transport(stdio 或 http)；stdio 用 command、args、cwd、env，http 用 url、headers。值裡寫 ${NAME} 會讀取部署密鑰 NAME。例：[{"name":"files","transport":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}]。改動在 World 重新啟動後生效。',
+      '伺服器是鍵值物件：鍵是伺服器名，值是它的設定。有 command 的走 stdio（可帶 args、cwd、env），有 url 的走 http（可帶 headers），也可以明確寫 transport。值裡寫 ${NAME} 會讀取部署密鑰 NAME。例：{"files":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}}。改動在 World 重新啟動後生效。',
     connectTimeoutTitle: '連線逾時',
     connectTimeoutDescription: '一個伺服器啟動並列出工具的最長等待時間，超過就記為連線失敗。',
     callTimeoutTitle: '呼叫逾時',

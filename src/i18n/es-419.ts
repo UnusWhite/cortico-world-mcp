@@ -8,7 +8,7 @@ const es419: McpText = {
     description: 'Servidores de Model Context Protocol. Mientras está activo, sus herramientas se usan mediante mcp_list_servers, mcp_list_tools y mcp_call_tool.',
     serversTitle: 'Servidores',
     serversDescription:
-      'Un arreglo JSON de servidores. Cada entrada tiene name y transport ("stdio" o "http"); stdio usa command, args, cwd y env, http usa url y headers. Escribir ${NAME} en un valor lee el secreto de despliegue NAME. Ejemplo: [{"name":"files","transport":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}]. Los cambios se aplican al reiniciar el World.',
+      'Los servidores son un objeto con el nombre del servidor como clave; cada valor tiene la configuración de ese servidor. Un command lo hace stdio (con args, cwd y env opcionales), una url lo hace http (con headers opcionales); también se puede escribir transport explícitamente. Escribir ${NAME} en un valor lee el secreto de despliegue NAME. Ejemplo: {"files":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}}. Los cambios se aplican al reiniciar el World.',
     connectTimeoutTitle: 'Tiempo de conexión',
     connectTimeoutDescription: 'Cuánto tiene un servidor para iniciar y listar sus herramientas antes de marcarse como fallido.',
     callTimeoutTitle: 'Tiempo de llamada',

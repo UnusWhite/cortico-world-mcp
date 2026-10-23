@@ -8,7 +8,7 @@ const ptBR: McpText = {
     description: 'Servidores do Model Context Protocol. Enquanto ativado, as ferramentas deles são usadas por mcp_list_servers, mcp_list_tools e mcp_call_tool.',
     serversTitle: 'Servidores',
     serversDescription:
-      'Um array JSON de servidores. Cada item tem name e transport ("stdio" ou "http"); stdio usa command, args, cwd e env, http usa url e headers. Escrever ${NAME} em um valor lê o segredo de implantação NAME. Exemplo: [{"name":"files","transport":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}]. As mudanças valem ao reiniciar o World.',
+      'Os servidores são um objeto com o nome do servidor como chave; cada valor traz as configurações daquele servidor. Um command o torna stdio (args, cwd e env opcionais), uma url o torna http (headers opcionais); transport também pode ser escrito explicitamente. Escrever ${NAME} em um valor lê o segredo de implantação NAME. Exemplo: {"files":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}}. As mudanças valem ao reiniciar o World.',
     connectTimeoutTitle: 'Tempo de conexão',
     connectTimeoutDescription: 'Quanto um servidor tem para iniciar e listar as ferramentas antes de ser marcado como falho.',
     callTimeoutTitle: 'Tempo de chamada',

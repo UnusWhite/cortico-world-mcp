@@ -8,7 +8,7 @@ const ru: McpText = {
     description: 'Серверы Model Context Protocol. Пока включено, их инструменты доступны через mcp_list_servers, mcp_list_tools и mcp_call_tool.',
     serversTitle: 'Серверы',
     serversDescription:
-      'JSON-массив серверов. У каждой записи есть name и transport ("stdio" или "http"); для stdio — command, args, cwd, env, для http — url, headers. Запись ${NAME} в значении читает секрет развёртывания NAME. Пример: [{"name":"files","transport":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}]. Изменения вступают в силу после перезапуска World.',
+      'Серверы — это объект, где ключ — имя сервера, а значение — его настройки. С command сервер работает через stdio (args, cwd, env необязательны), с url — через http (headers необязательны); transport можно указать и явно. Запись ${NAME} в значении читает секрет развёртывания NAME. Пример: {"files":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}}. Изменения вступают в силу после перезапуска World.',
     connectTimeoutTitle: 'Тайм-аут подключения',
     connectTimeoutDescription: 'Сколько серверу даётся на запуск и перечисление инструментов, прежде чем он будет помечен как недоступный.',
     callTimeoutTitle: 'Тайм-аут вызова',

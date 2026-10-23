@@ -8,7 +8,7 @@ const zh: McpText = {
     description: '模型上下文协议服务器。启用后，它提供的工具经 mcp_list_servers、mcp_list_tools 与 mcp_call_tool 使用。',
     serversTitle: '服务器',
     serversDescription:
-      '服务器的 JSON 数组。每项有 name、transport(stdio 或 http)；stdio 用 command、args、cwd、env，http 用 url、headers。值里写 ${NAME} 会读取部署密钥 NAME。例：[{"name":"files","transport":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}]。改动在 World 重启后生效。',
+      '服务器是键值对象：键是服务器名，值是它的设置。有 command 的走 stdio（可带 args、cwd、env），有 url 的走 http（可带 headers），也可以显式写 transport。值里写 ${NAME} 会读取部署密钥 NAME。例：{"files":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}}。改动在 World 重启后生效。',
     connectTimeoutTitle: '连接超时',
     connectTimeoutDescription: '一个服务器启动并列出工具的最长等待时间，超过就记为连接失败。',
     callTimeoutTitle: '调用超时',

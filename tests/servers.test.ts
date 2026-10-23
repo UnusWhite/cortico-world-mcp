@@ -2,28 +2,30 @@ import { describe, expect, it } from 'vitest';
 import { expandEntry, McpConfigError, parseServers } from '../src/servers.ts';
 
 describe('worlds.mcp.servers', () => {
-  it('treats an empty string as no server', () => {
+  it('treats an empty string or an empty object as no server', () => {
     expect(parseServers('')).toEqual([]);
     expect(parseServers('   ')).toEqual([]);
+    expect(parseServers('{}')).toEqual([]);
   });
 
-  it('defaults the transport from command or url', () => {
-    const [stdio, http] = parseServers(JSON.stringify([
-      { name: 'files', command: 'npx', args: ['-y', 'server'] },
-      { name: 'docs', url: 'https://example.test/mcp' },
-    ]));
+  it('takes the key as the name and defaults the transport from command or url', () => {
+    const [stdio, http] = parseServers(JSON.stringify({
+      files: { command: 'npx', args: ['-y', 'server'] },
+      docs: { url: 'https://example.test/mcp' },
+    }));
     expect(stdio).toMatchObject({ name: 'files', transport: 'stdio', args: ['-y', 'server'], env: {} });
     expect(http).toMatchObject({ name: 'docs', transport: 'http', headers: {} });
   });
 
   it('reports every bad entry in one error', () => {
-    const raw = JSON.stringify([
-      { name: 'no-command' },
-      { name: 'bad name!' },
-      { name: 'bad-url', transport: 'http', url: 'ftp://example.test' },
-      { name: 'ok', command: 'node' },
-      { name: 'ok', command: 'node' },
-    ]);
+    const raw = JSON.stringify({
+      'no-command': {},
+      'bad name!': { command: 'node' },
+      'bad-url': { transport: 'http', url: 'ftp://example.test' },
+      'has-name': { name: 'other', command: 'node' },
+      'ok ': { command: 'node' },
+      ok: { command: 'node' },
+    });
     expect(() => parseServers(raw)).toThrow(McpConfigError);
     try {
       parseServers(raw);
@@ -32,17 +34,18 @@ describe('worlds.mcp.servers', () => {
       expect(text).toContain('no-command');
       expect(text).toContain('bad name!');
       expect(text).toContain('ftp://example.test');
+      expect(text).toContain('the key is the name');
       expect(text).toContain('Duplicate server name "ok"');
     }
   });
 
-  it('rejects a non-array and invalid JSON', () => {
-    expect(() => parseServers('{}')).toThrow(/must be a JSON array/);
+  it('rejects an array and invalid JSON', () => {
+    expect(() => parseServers('[]')).toThrow(/must be a JSON object/);
     expect(() => parseServers('[')).toThrow(/not valid JSON/);
   });
 
   it('rejects section settings placed inside a server entry', () => {
-    const raw = JSON.stringify([{ name: 'files', command: 'node', connectTimeoutMs: 60_000 }]);
+    const raw = JSON.stringify({ files: { command: 'node', connectTimeoutMs: 60_000 } });
     expect(() => parseServers(raw)).toThrow(/worlds\.mcp\.connectTimeoutMs/);
   });
 });

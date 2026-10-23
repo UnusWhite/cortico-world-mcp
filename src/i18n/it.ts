@@ -8,7 +8,7 @@ const it: McpText = {
     description: 'Server Model Context Protocol. Quando attivo, i loro strumenti si usano tramite mcp_list_servers, mcp_list_tools e mcp_call_tool.',
     serversTitle: 'Server',
     serversDescription:
-      'Un array JSON di server. Ogni voce ha name e transport ("stdio" o "http"); stdio usa command, args, cwd, env, http usa url e headers. Scrivere ${NAME} in un valore legge il segreto di distribuzione NAME. Esempio: [{"name":"files","transport":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}]. Le modifiche valgono dopo il riavvio del World.',
+      'I server sono un oggetto con il nome del server come chiave; ogni valore contiene le impostazioni di quel server. Un command lo rende stdio (con args, cwd, env facoltativi), una url lo rende http (con headers facoltativi); transport si può anche scrivere esplicitamente. Scrivere ${NAME} in un valore legge il segreto di distribuzione NAME. Esempio: {"files":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/docs"]}}. Le modifiche valgono dopo il riavvio del World.',
     connectTimeoutTitle: 'Timeout connessione',
     connectTimeoutDescription: 'Quanto un server ha per avviarsi ed elencare i suoi strumenti prima di essere segnato come fallito.',
     callTimeoutTitle: 'Timeout chiamata',
