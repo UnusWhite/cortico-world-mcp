@@ -1,6 +1,6 @@
 {
   "name": "cortico-world-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Cortico World: connects Model Context Protocol servers and lets the bot use their tools through one stable gateway",
   "license": "AGPL-3.0-or-later",

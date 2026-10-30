@@ -39,7 +39,7 @@ Owner:`src/world.ts`
 |---|---|
 | *(键)* | `mcp_call_tool` 里用的路由名;1–40 个字母、数字、`_` 或 `-`。 |
 | `transport` | `stdio` 或 `http`;省略时从 `command` 或 `url` 推出来。 |
-| `command`、`args`、`cwd`、`env` | 只对 stdio。子进程继承 SDK 的默认环境,再叠 `env`。 |
+| `command`、`args`、`cwd`、`env` | 只对 stdio。子进程继承 SDK 的默认环境,加上应用自己的 `CORTICO_NODE_EXE` 与 `CORTICO_PNPM_CJS`,再叠 `env`。 |
 | `url`、`headers` | 只对 http;Streamable HTTP。 |
 | `${NAME}` | 在任何值里,读取部署密钥 `NAME`(部署的 `.env` 或进程环境)。 |
 

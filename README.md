@@ -46,7 +46,7 @@ settings. An empty string means no server.
 |---|---|
 | *(key)* | The routing name in `mcp_call_tool`; 1–40 letters, digits, `_` or `-`. |
 | `transport` | `stdio` or `http`; inferred from `command` or `url` when omitted. |
-| `command`, `args`, `cwd`, `env` | stdio only. The child inherits the SDK's default environment plus `env`. |
+| `command`, `args`, `cwd`, `env` | stdio only. The child inherits the SDK's default environment plus the app's `CORTICO_NODE_EXE` and `CORTICO_PNPM_CJS`, then `env`. |
 | `url`, `headers` | http only; Streamable HTTP. |
 | `${NAME}` | In any value, reads the deployment secret `NAME` (the deployment `.env` or the process environment). |
 

@@ -23,9 +23,29 @@ export interface McpServerOptions {
   onClose: (name: string, reason: string) => void;
 }
 
-const CLIENT_INFO = { name: 'cortico-mcp', version: '0.1.0' };
+const CLIENT_INFO = { name: 'cortico-mcp', version: '0.1.1' };
 const CLOSE_TIMEOUT_MS = 2000;
 const STDERR_TAIL_MAX = 4000;
+
+/**
+ * Paths the app's command shims need. A Coopanion build puts `shims/` first on PATH and ships
+ * `node.cmd` there, which runs `%CORTICO_NODE_EXE%`; the SDK's default environment is a whitelist
+ * that leaves that variable out, so the shim expands to an empty command and cmd reports `""`.
+ */
+const APP_SHIM_ENV = ['CORTICO_NODE_EXE', 'CORTICO_PNPM_CJS'] as const;
+
+/**
+ * The child's environment: the SDK's default whitelist plus the app's own executable paths, then
+ * whatever the server entry declares. Neither path is a secret; they are the app's install locations.
+ */
+export function childEnvironment(extra: Record<string, string> = {}): Record<string, string> {
+  const env = getDefaultEnvironment();
+  for (const name of APP_SHIM_ENV) {
+    const value = process.env[name];
+    if (value) env[name] = value;
+  }
+  return { ...env, ...extra };
+}
 
 const message = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
@@ -76,7 +96,7 @@ export class McpServer {
       command: this.entry.command as string,
       args: this.entry.args,
       ...(this.entry.cwd ? { cwd: this.entry.cwd } : {}),
-      env: { ...getDefaultEnvironment(), ...this.entry.env },
+      env: childEnvironment(this.entry.env),
       stderr: 'pipe',
     });
     transport.stderr?.on('data', (chunk: unknown) => {

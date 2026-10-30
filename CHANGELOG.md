@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+- A stdio server declared as `node` or `corepack` no longer fails with `'""' is not recognized as an
+  internal or external command`. Coopanion 0.2.16 puts its `shims/` directory first on `PATH` and
+  ships a `node.cmd` there that runs `%CORTICO_NODE_EXE%`; the child now receives that variable and
+  `CORTICO_PNPM_CJS`. Servers configured with an absolute interpreter path were not affected.
+
 ## 0.1.0
 
 - First release: stdio and Streamable HTTP MCP servers, declared in `worlds.mcp.servers` as an
