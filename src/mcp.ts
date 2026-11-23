@@ -79,6 +79,7 @@ export class McpServer {
 
   private client: Client | null = null;
   private transport: Transport | null = null;
+  private connectPromise: Promise<void> | null = null;
   private closing = false;
   private stderrTail = '';
   /** Errors the SDK reports on the client side, kept apart from the server's own stderr. */
@@ -140,6 +141,16 @@ export class McpServer {
   }
 
   async connect(): Promise<void> {
+    if (this.connectPromise) return this.connectPromise;
+    const run = this.doConnect().finally(() => {
+      if (this.connectPromise === run) this.connectPromise = null;
+    });
+    this.connectPromise = run;
+    return run;
+  }
+
+  private async doConnect(): Promise<void> {
+    if (this.client) await this.dispose();
     this.closing = false;
     this.stderrTail = '';
     this.clientErrorTail = '';
@@ -160,10 +171,23 @@ export class McpServer {
         this.opts.connectTimeoutMs,
         'connect timed out',
       );
-      this.tools = await this.listAll();
+      if (this.closing) {
+        await this.dispose();
+        return;
+      }
+      const tools = await this.listAll();
+      if (this.closing) {
+        await this.dispose();
+        return;
+      }
+      this.tools = tools;
       this.state = 'connected';
       this.error = '';
     } catch (error) {
+      if (this.closing) {
+        await this.dispose();
+        return;
+      }
       const detail = message(error);
       const hint = /timed out/.test(detail)
         ? '; raise worlds.mcp.connectTimeoutMs if the server\'s first start is slow (npx may download it)'
@@ -222,6 +246,8 @@ export class McpServer {
     this.client = null;
     this.transport = null;
     if (!client) return;
+    client.onclose = undefined;
+    client.onerror = undefined;
     try {
       await withTimeout(client.close(), CLOSE_TIMEOUT_MS, 'close timed out');
     } catch {

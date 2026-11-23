@@ -1,7 +1,14 @@
 /** A real stdio MCP server, spawned by the tests; no network involved. */
+import { existsSync } from 'node:fs';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+
+const gateFile = process.env.FIXTURE_GATE_FILE;
+if (gateFile && !existsSync(gateFile)) {
+  console.error('gate file missing');
+  process.exit(1);
+}
 
 const server = new McpServer({ name: 'mcp-world-fixture', version: '0.0.0' });
 

@@ -22,6 +22,8 @@ const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url
 /** How much of the catalog enters the prefix; the rest is one `mcp_list_tools` call away. */
 const CATALOG_TOOLS_PER_SERVER = 40;
 const CATALOG_MAX_CHARS = 4000;
+const DEFAULT_RETRY_INITIAL_MS = 5_000;
+const DEFAULT_RETRY_MAX_MS = 60_000;
 
 const message = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
@@ -78,6 +80,16 @@ export interface McpWorldOptions {
   timezone: string;
   /** Deployment secret by name, for `${NAME}` in server entries. */
   secret: (name: string) => string;
+  /** Initial delay before retrying a failed or disconnected server. */
+  retryInitialMs?: number;
+  /** Maximum backoff delay between reconnect attempts. */
+  retryMaxMs?: number;
+}
+
+interface RetryState {
+  timer: NodeJS.Timeout | null;
+  delayMs: number;
+  lastLoggedError: string;
 }
 
 export class McpWorld implements World {
@@ -86,10 +98,15 @@ export class McpWorld implements World {
   private host: WorldHost | null = null;
   private readonly servers: McpServer[] = [];
   private readonly entries: McpServerEntry[] = [];
+  private readonly retryState = new Map<McpServer, RetryState>();
+  private readonly retryInitialMs: number;
+  private readonly retryMaxMs: number;
   private readonly configError: string;
   private stopping = false;
 
   constructor(private readonly opts: McpWorldOptions) {
+    this.retryInitialMs = Math.max(10, opts.retryInitialMs ?? DEFAULT_RETRY_INITIAL_MS);
+    this.retryMaxMs = Math.max(this.retryInitialMs, opts.retryMaxMs ?? DEFAULT_RETRY_MAX_MS);
     try {
       this.entries = parseServers(opts.cfg.servers);
       this.configError = '';
@@ -117,6 +134,7 @@ export class McpWorld implements World {
   async start(host: WorldHost): Promise<void> {
     this.host = host;
     this.stopping = false;
+    this.clearAllRetryTimers();
     this.servers.length = 0;
     if (this.configError) {
       host.log.warn(`MCP 配置无效，未连接任何服务器：${this.configError}`);
@@ -130,17 +148,77 @@ export class McpWorld implements World {
         onClose: (name, reason) => this.onDisconnect(name, reason),
       }));
     }
-    await Promise.all(this.servers.map(async (server) => {
-      await server.connect();
-      if (server.state === 'error') host.log.warn(`MCP server "${server.entry.name}" 连接失败`, { err: server.error });
-    }));
+    await Promise.all(this.servers.map((server) => this.connectServer(server, { initial: true })));
   }
 
   async stop(): Promise<void> {
     this.stopping = true;
     this.host = null;
+    this.clearAllRetryTimers();
     const servers = this.servers.splice(0);
     await Promise.all(servers.map((server) => server.close()));
+  }
+
+  private getRetryState(server: McpServer): RetryState {
+    let state = this.retryState.get(server);
+    if (!state) {
+      state = { timer: null, delayMs: this.retryInitialMs, lastLoggedError: '' };
+      this.retryState.set(server, state);
+    }
+    return state;
+  }
+
+  private clearRetryTimer(server: McpServer): void {
+    const state = this.retryState.get(server);
+    if (!state?.timer) return;
+    clearTimeout(state.timer);
+    state.timer = null;
+  }
+
+  private clearAllRetryTimers(): void {
+    for (const state of this.retryState.values()) {
+      if (state.timer) clearTimeout(state.timer);
+    }
+    this.retryState.clear();
+  }
+
+  private scheduleReconnect(server: McpServer): void {
+    if (this.stopping || server.state !== 'error') return;
+    const state = this.getRetryState(server);
+    this.clearRetryTimer(server);
+    const delay = state.delayMs;
+    state.delayMs = Math.min(state.delayMs * 2, this.retryMaxMs);
+    const timer = setTimeout(() => {
+      state.timer = null;
+      void this.connectServer(server);
+    }, delay);
+    timer.unref?.();
+    state.timer = timer;
+  }
+
+  private async connectServer(server: McpServer, opts?: { initial?: boolean }): Promise<void> {
+    if (this.stopping) return;
+    this.clearRetryTimer(server);
+    await server.connect();
+    if (this.stopping) return;
+
+    const state = this.getRetryState(server);
+    if (server.state === 'connected') {
+      state.delayMs = this.retryInitialMs;
+      state.lastLoggedError = '';
+      if (!opts?.initial) {
+        this.host?.log.info(`MCP server "${server.entry.name}" 已重新连接（${server.tools.length} 个工具）`);
+      }
+      return;
+    }
+
+    if (server.state === 'error') {
+      if (opts?.initial || server.error !== state.lastLoggedError) {
+        this.host?.log.warn(`MCP server "${server.entry.name}" 连接失败`, { err: server.error });
+        state.lastLoggedError = server.error;
+      }
+      this.scheduleReconnect(server);
+    }
   }
 
   /** An unexpected close is the only server change worth waking the bot for. */
@@ -158,6 +236,14 @@ export class McpWorld implements World {
       },
       { trigger: 'debounce' },
     ).catch((error) => host.log.warn('MCP 断线事件投递失败', { err: String(error) }));
+
+    const server = this.serverNamed(name);
+    if (server) {
+      const state = this.getRetryState(server);
+      state.delayMs = this.retryInitialMs;
+      state.lastLoggedError = reason;
+      this.scheduleReconnect(server);
+    }
   }
 
   tools(): ToolDef[] {
@@ -207,25 +293,35 @@ export class McpWorld implements World {
     if (this.servers.length === 0) return this.serversReceipt();
 
     const wanted = typeof args.server === 'string' ? args.server.trim() : '';
-    if (wanted) {
-      const server = this.serverNamed(wanted);
-      if (!server) {
-        const names = this.servers.map((item) => item.entry.name).join(', ');
-        return `[tool failed] Unknown MCP server "${wanted}". Configured servers: ${names}.`;
-      }
+    const wantedServer = wanted ? this.serverNamed(wanted) : undefined;
+    if (wanted && !wantedServer) {
+      const names = this.servers.map((item) => item.entry.name).join(', ');
+      return `[tool failed] Unknown MCP server "${wanted}". Configured servers: ${names}.`;
     }
 
-    const targets = wanted ? [this.serverNamed(wanted) as McpServer] : this.servers.filter((server) => server.state === 'connected');
-    if (targets.length === 0) return this.serversReceipt();
+    const reconnected = new Set<McpServer>();
+    if (wantedServer && wantedServer.state === 'error') {
+      await this.connectServer(wantedServer);
+      reconnected.add(wantedServer);
+    }
 
     const notes: string[] = [];
     if (args.refresh === true) {
-      for (const server of targets) {
-        if (server.state !== 'connected') continue;
-        const failure = await server.refresh();
-        if (failure) notes.push(`[tool failed] ${server.entry.name}: refresh failed: ${failure}`);
+      const toRefresh = wantedServer ? [wantedServer] : this.servers;
+      for (const server of toRefresh) {
+        if (reconnected.has(server)) continue;
+        if (server.state === 'error') {
+          await this.connectServer(server);
+          reconnected.add(server);
+        } else if (server.state === 'connected') {
+          const failure = await server.refresh();
+          if (failure) notes.push(`[tool failed] ${server.entry.name}: refresh failed: ${failure}`);
+        }
       }
     }
+
+    const targets = wantedServer ? [wantedServer] : this.servers.filter((server) => server.state === 'connected');
+    if (targets.length === 0) return this.serversReceipt();
 
     const detail = args.detail !== false;
     const query = typeof args.query === 'string' ? args.query.trim().toLowerCase() : '';
@@ -259,6 +355,12 @@ export class McpWorld implements World {
     if (!server) {
       const names = this.servers.map((item) => item.entry.name).join(', ');
       return fail(`[tool failed] Unknown MCP server "${serverName}". Configured servers: ${names || '(none)'}.`);
+    }
+    if (server.state === 'error') {
+      await this.connectServer(server);
+    }
+    if (server.state !== 'connected') {
+      return fail(`[tool failed] MCP server "${serverName}" is not connected: ${server.error || 'not started'}.`);
     }
     if (!server.tools.some((tool) => tool.name === toolName)) {
       const names = server.tools.map((tool) => tool.name).slice(0, 50).join(', ');
